@@ -219,7 +219,7 @@ En `docker-compose.yml` ya viene configurada:
 ```yml
 environment:
   - S3_ENDPOINT=http://localstack:4566
-
+```
 ---
 
 ## Autor

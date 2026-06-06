@@ -3,6 +3,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Res,
   UploadedFiles,
   UseInterceptors,
@@ -17,41 +18,26 @@ export class FilesController {
 
   @Post('upload')
   @UseInterceptors(FilesInterceptor('files'))
-  uploadFiles(
-    @UploadedFiles()
-    files: Express.Multer.File[],
-  ) {
+  uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
     return this.filesService.uploadFiles(files);
   }
 
   @Get('recent')
-  getRecentFiles() {
-    return this.filesService.getRecentFiles();
+  getRecentFiles(@Query('limit') limit?: string) {
+    return this.filesService.getRecentFiles(Number(limit) || 3);
   }
 
   @Get('download/:key')
-  async downloadFile(
-    @Param('key') key: string,
-    @Res() res: Response,
-  ) {
-    const file =
-      await this.filesService.downloadFile(key);
+  async downloadFile(@Param('key') key: string, @Res() res: Response) {
+    const file = await this.filesService.downloadFile(key);
 
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${key}"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${key}"`);
 
     if (file.ContentType) {
-      res.setHeader(
-        'Content-Type',
-        file.ContentType,
-      );
+      res.setHeader('Content-Type', file.ContentType);
     }
 
-    const stream =
-      file.Body as NodeJS.ReadableStream;
-
+    const stream = file.Body as NodeJS.ReadableStream;
     stream.pipe(res);
   }
 }

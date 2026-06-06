@@ -8,18 +8,29 @@ interface FileInfo {
   lastModified: string;
 }
 
+interface FilesResponse {
+  total: number;
+  files: FileInfo[];
+}
+
 const API_URL = 'http://localhost:3001/files';
 
 function App() {
+  const [limit, setLimit] = useState(3);
+  const [totalFiles, setTotalFiles] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [recentFiles, setRecentFiles] = useState<FileInfo[]>([]);
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  const loadRecentFiles = async () => {
+  const loadRecentFiles = async (currentLimit = limit) => {
     try {
-      const response = await axios.get(`${API_URL}/recent`);
-      setRecentFiles(response.data);
+      const response = await axios.get<FilesResponse>(
+        `${API_URL}/recent?limit=${currentLimit}`,
+      );
+
+      setRecentFiles(response.data.files);
+      setTotalFiles(response.data.total);
     } catch (error) {
       console.error(error);
       setMessage('No se pudieron cargar los archivos recientes.');
@@ -27,8 +38,8 @@ function App() {
   };
 
   useEffect(() => {
-    loadRecentFiles();
-  }, []);
+    loadRecentFiles(limit);
+  }, [limit]);
 
   const handleFiles = (files: FileList) => {
     const fileArray = Array.from(files);
@@ -66,7 +77,7 @@ function App() {
       setMessage('Archivo(s) subido(s) correctamente.');
       setSelectedFiles([]);
 
-      await loadRecentFiles();
+      await loadRecentFiles(limit);
     } catch (error) {
       console.error(error);
       setMessage('Error al subir los archivos.');
@@ -112,7 +123,9 @@ function App() {
           {selectedFiles.length > 0 && (
             <div className="selected-files">
               {selectedFiles.map((file) => (
-                <p key={file.name}>{file.name}</p>
+                <p key={`${file.name}-${file.lastModified}`}>
+                  {file.name}
+                </p>
               ))}
             </div>
           )}
@@ -126,23 +139,40 @@ function App() {
       </section>
 
       <section className="recent-section">
-        <h2>Últimos 3 archivos</h2>
+        <h2>
+          {limit === 3
+            ? 'Últimos 3 archivos'
+            : `Últimos ${Math.min(limit, totalFiles)} archivos`}
+        </h2>
 
         {recentFiles.length === 0 ? (
-          <p className="empty">Todavía no hay archivos cargados.</p>
+          <p className="empty">
+            Todavía no hay archivos cargados.
+          </p>
         ) : (
-          recentFiles.map((file) => (
-            <div className="file-card" key={file.key}>
-              <div>
-                <strong>{file.key}</strong>
-                <p>{Math.round(file.size / 1024)} KB</p>
-              </div>
+          <>
+            {recentFiles.map((file) => (
+              <div className="file-card" key={file.key}>
+                <div>
+                  <strong>{file.key}</strong>
+                  <p>{Math.round(file.size / 1024)} KB</p>
+                </div>
 
-              <button onClick={() => downloadFile(file.key)}>
-                Descargar
+                <button onClick={() => downloadFile(file.key)}>
+                  Descargar
+                </button>
+              </div>
+            ))}
+
+            {recentFiles.length < totalFiles && (
+              <button
+                className="show-more-button"
+                onClick={() => setLimit((prev) => prev + 5)}
+              >
+                Mostrar más
               </button>
-            </div>
-          ))
+            )}
+          </>
         )}
       </section>
     </main>

@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { OnModuleInit } from '@nestjs/common/interfaces';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
   GetObjectCommand,
   ListObjectsV2Command,
@@ -11,14 +10,11 @@ import {
 
 @Injectable()
 export class FilesService implements OnModuleInit {
-  private readonly bucketName =
-    'clon-drive-bucket';
+  private readonly bucketName = 'clon-drive-bucket';
 
   private readonly s3 = new S3Client({
     region: 'us-east-1',
-    endpoint:
-      process.env.S3_ENDPOINT ??
-      'http://localhost:4566',
+    endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:4566',
     forcePathStyle: true,
     credentials: {
       accessKeyId: 'test',
@@ -44,16 +40,16 @@ export class FilesService implements OnModuleInit {
         }),
       );
 
-      console.log(
-        `Bucket ${this.bucketName} creado automáticamente`,
-      );
+      console.log(`Bucket ${this.bucketName} creado automáticamente`);
     }
   }
 
-  async uploadFiles(
-    files: Express.Multer.File[],
-  ) {
-    const uploadedFiles: any[] = [];
+  async uploadFiles(files: Express.Multer.File[]) {
+    const uploadedFiles: {
+      fileName: string;
+      key: string;
+    }[] = [];
+
     for (const file of files) {
       const key = `${Date.now()}-${file.originalname}`;
 
@@ -73,13 +69,12 @@ export class FilesService implements OnModuleInit {
     }
 
     return {
-      message:
-        'Archivos subidos correctamente',
+      message: 'Archivos subidos correctamente',
       files: uploadedFiles,
     };
   }
 
-  async getRecentFiles() {
+  async getRecentFiles(limit = 3) {
     const result = await this.s3.send(
       new ListObjectsV2Command({
         Bucket: this.bucketName,
@@ -88,21 +83,21 @@ export class FilesService implements OnModuleInit {
 
     const files = result.Contents ?? [];
 
-    return files
-      .sort((a, b) => {
-        const dateA =
-          a.LastModified?.getTime() ?? 0;
-        const dateB =
-          b.LastModified?.getTime() ?? 0;
+    const sortedFiles = files.sort((a, b) => {
+      const dateA = a.LastModified?.getTime() ?? 0;
+      const dateB = b.LastModified?.getTime() ?? 0;
 
-        return dateB - dateA;
-      })
-      .slice(0, 3)
-      .map((file) => ({
+      return dateB - dateA;
+    });
+
+    return {
+      total: sortedFiles.length,
+      files: sortedFiles.slice(0, limit).map((file) => ({
         key: file.Key,
         size: file.Size,
         lastModified: file.LastModified,
-      }));
+      })),
+    };
   }
 
   async downloadFile(key: string) {

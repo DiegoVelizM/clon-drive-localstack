@@ -204,60 +204,21 @@ la cantidad de archivos con limite definido también, 12 sólo es un ejemplo.
 GET /files/download/{key}
 ```
 
-Este endpoint permite descargar un archivo almacenado en el bucket S3.
+## Variables de entorno
 
----
+El proyecto utiliza variables de entorno para configurar la conexión del backend con LocalStack S3.
 
-## Flujo de uso
+### Backend
 
-1. El usuario abre la aplicación web.
-2. Arrastra o selecciona uno o más archivos.
-3. Los archivos son enviados al backend NestJS.
-4. El backend almacena los archivos en LocalStack S3.
-5. La interfaz actualiza la lista de archivos recientes.
-6. El usuario puede descargar cualquier archivo listado.
+| Variable | Descripción | Valor en Docker |
+|---|---|---|
+| `S3_ENDPOINT` | Endpoint del servicio S3 utilizado por el backend | `http://localstack:4566` |
 
----
+En `docker-compose.yml` ya viene configurada:
 
-## Comandos útiles
-
-Levantar servicios:
-
-```bash
-docker compose up -d --build
-```
-
-Detener servicios:
-
-```bash
-docker compose down
-```
-
-Ver contenedores activos:
-
-```bash
-docker ps
-```
-
-Ver logs del backend:
-
-```bash
-docker logs clon-drive-backend
-```
-
-Ver buckets en LocalStack:
-
-```bash
-docker exec -it drive-localstack awslocal s3 ls
-```
-
----
-
-## Consideraciones
-
-LocalStack se utiliza como emulador local de AWS S3 para fines de desarrollo y pruebas.
-
-El bucket S3 es definido mediante Terraform y el backend también valida su existencia al iniciar para evitar errores si el bucket no está creado.
+```yml
+environment:
+  - S3_ENDPOINT=http://localstack:4566
 
 ---
 

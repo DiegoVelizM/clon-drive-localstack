@@ -190,6 +190,14 @@ GET /files/recent
 
 Este endpoint retorna los últimos 3 archivos cargados.
 
+ó
+
+```http
+GET /files/recent?limit=12
+```
+
+la cantidad de archivos con limite definido también, 12 sólo es un ejemplo.
+
 ### Descargar archivo
 
 ```http

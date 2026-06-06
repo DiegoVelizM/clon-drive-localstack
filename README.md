@@ -124,6 +124,22 @@ GET /files/recent
 GET /files/download/{key}
 ```
 
+## Variables de entorno
+
+El proyecto utiliza variables de entorno para configurar la conexión del backend con LocalStack S3.
+
+### Backend
+
+| Variable | Descripción | Valor en Docker |
+|---|---|---|
+| `S3_ENDPOINT` | Endpoint del servicio S3 utilizado por el backend | `http://localstack:4566` |
+
+En `docker-compose.yml` ya viene configurada:
+
+```yml
+environment:
+  - S3_ENDPOINT=http://localstack:4566
+
 ---
 
 ## Autor

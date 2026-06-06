@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Aplicación web que permite cargar, visualizar y descargar archivos utilizando un almacenamiento tipo Amazon S3 emulado localmente mediante LocalStack.
+Aplicación web tipo clon simplificado de Google Drive que permite cargar, visualizar y descargar archivos utilizando un almacenamiento tipo Amazon S3 emulado localmente mediante LocalStack.
 
 El proyecto fue desarrollado utilizando React para el frontend, NestJS para el backend, Docker para la containerización y Terraform para la creación de infraestructura como código.
 
@@ -50,27 +50,60 @@ Creación del bucket S3
 * Descarga de archivos.
 * Almacenamiento en bucket S3 mediante LocalStack.
 * Infraestructura definida con Terraform.
+* Ejecución mediante Docker Compose.
 
 ---
 
 ## Requisitos
 
+Antes de ejecutar el proyecto se debe tener instalado:
+
 * Docker Desktop
 * Terraform
 * Git
+* Node.js 22 o superior, solo en caso de desarrollo local
 
 ---
 
-## Ejecución
+## Variables de entorno
 
-### 1. Clonar repositorio
+El proyecto utiliza variables de entorno para configurar la conexión del backend con LocalStack S3.
+
+### Backend
+
+| Variable      | Descripción                                       | Valor en Docker          |
+| ------------- | ------------------------------------------------- | ------------------------ |
+| `S3_ENDPOINT` | Endpoint del servicio S3 utilizado por el backend | `http://localstack:4566` |
+
+En `docker-compose.yml` ya viene configurada:
+
+```yml
+environment:
+  - S3_ENDPOINT=http://localstack:4566
+```
+
+Para ejecución local fuera de Docker, el backend utiliza por defecto:
+
+```text
+http://localhost:4566
+```
+
+por lo que no es obligatorio definir la variable manualmente.
+
+---
+
+## Ejecución del proyecto
+
+### 1. Clonar el repositorio
 
 ```bash
 git clone <url-del-repositorio>
 cd clon-drive-localstack
 ```
 
-### 2. Crear infraestructura
+### 2. Crear infraestructura con Terraform
+
+Desde la carpeta `infra`:
 
 ```bash
 cd infra
@@ -78,17 +111,32 @@ terraform init
 terraform apply
 ```
 
-### 3. Levantar servicios
+Cuando Terraform solicite confirmación, escribir:
 
-Desde la raíz:
+```text
+yes
+```
+
+Estos comandos crean el bucket S3 utilizado por la aplicación dentro de LocalStack.
+
+### 3. Levantar los servicios con Docker Compose
+
+Volver a la raíz del proyecto:
 
 ```bash
+cd ..
 docker compose up -d --build
 ```
 
+Este comando levanta los siguientes servicios:
+
+* LocalStack
+* Backend NestJS
+* Frontend React
+
 ---
 
-## Acceso
+## Acceso a la aplicación
 
 Frontend:
 
@@ -102,9 +150,15 @@ Backend:
 http://localhost:3001
 ```
 
+LocalStack:
+
+```text
+http://localhost:4566
+```
+
 ---
 
-## Endpoints
+## Endpoints del backend
 
 ### Subir archivos
 
@@ -112,11 +166,15 @@ http://localhost:3001
 POST /files/upload
 ```
 
+Este endpoint recibe uno o más archivos desde el frontend y los almacena en el bucket S3 de LocalStack.
+
 ### Obtener archivos recientes
 
 ```http
 GET /files/recent
 ```
+
+Este endpoint retorna los últimos 3 archivos cargados.
 
 ### Descargar archivo
 
@@ -124,22 +182,60 @@ GET /files/recent
 GET /files/download/{key}
 ```
 
-## Variables de entorno
+Este endpoint permite descargar un archivo almacenado en el bucket S3.
 
-El proyecto utiliza variables de entorno para configurar la conexión del backend con LocalStack S3.
+---
 
-### Backend
+## Flujo de uso
 
-| Variable | Descripción | Valor en Docker |
-|---|---|---|
-| `S3_ENDPOINT` | Endpoint del servicio S3 utilizado por el backend | `http://localstack:4566` |
+1. El usuario abre la aplicación web.
+2. Arrastra o selecciona uno o más archivos.
+3. Los archivos son enviados al backend NestJS.
+4. El backend almacena los archivos en LocalStack S3.
+5. La interfaz actualiza la lista de archivos recientes.
+6. El usuario puede descargar cualquier archivo listado.
 
-En `docker-compose.yml` ya viene configurada:
+---
 
-```yml
-environment:
-  - S3_ENDPOINT=http://localstack:4566
+## Comandos útiles
+
+Levantar servicios:
+
+```bash
+docker compose up -d --build
 ```
+
+Detener servicios:
+
+```bash
+docker compose down
+```
+
+Ver contenedores activos:
+
+```bash
+docker ps
+```
+
+Ver logs del backend:
+
+```bash
+docker logs clon-drive-backend
+```
+
+Ver buckets en LocalStack:
+
+```bash
+docker exec -it drive-localstack awslocal s3 ls
+```
+
+---
+
+## Consideraciones
+
+LocalStack se utiliza como emulador local de AWS S3 para fines de desarrollo y pruebas.
+El bucket S3 es definido mediante Terraform y el backend también valida su existencia al iniciar para evitar errores si el bucket no está creado.
+
 ---
 
 ## Autor

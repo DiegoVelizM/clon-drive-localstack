@@ -61,7 +61,7 @@ Antes de ejecutar el proyecto se debe tener instalado:
 * Docker Desktop
 * Terraform
 * Git
-* Node.js 22 o superior, solo en caso de desarrollo local
+* Node.js 22 o superior (solo para desarrollo local)
 
 ---
 
@@ -138,23 +138,37 @@ Este comando levanta los siguientes servicios:
 
 ## Acceso a la aplicación
 
-Frontend:
+### Frontend
 
 ```text
 http://localhost:5173
 ```
 
-Backend:
+### Backend
 
 ```text
 http://localhost:3001
 ```
 
-LocalStack:
+### Verificación de LocalStack
 
 ```text
-http://localhost:4566
+http://localhost:4566/_localstack/health
 ```
+
+Este endpoint permite verificar el estado de los servicios de LocalStack.
+
+Para este proyecto, el servicio importante es S3, por lo que debería aparecer una respuesta similar a:
+
+```json
+{
+  "services": {
+    "s3": "running"
+  }
+}
+```
+
+Lo anterior confirma que LocalStack está operativo y que el servicio S3 se encuentra disponible para el almacenamiento de archivos.
 
 ---
 
@@ -234,6 +248,7 @@ docker exec -it drive-localstack awslocal s3 ls
 ## Consideraciones
 
 LocalStack se utiliza como emulador local de AWS S3 para fines de desarrollo y pruebas.
+
 El bucket S3 es definido mediante Terraform y el backend también valida su existencia al iniciar para evitar errores si el bucket no está creado.
 
 ---
